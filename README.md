@@ -19,36 +19,76 @@ The framework is designed to be **interpretable**, **uncertainty-aware**, and **
 
 ---
 
-## 🏗️ Architecture
-Input Sensor Data (B=128, T=64, F=25)
+┌──────────────────────────────────────────────────────────────────────┐
+│                         INPUT SENSOR DATA                            │
+│                    Batch=128 │ Window=64 │ Features=25               │
+└──────────────────────────────┬───────────────────────────────────────┘
 │
 ▼
-┌─────────────────────────┐
-│   Shared CNN-GRU Encoder │
-│  Conv1D (25→96) + BN + ReLU │
-│  Conv1D (96→96) + BN + ReLU │
-│  GRU (96→192)            │
-│  Output: Z [B, 192]      │
-└────────────┬────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                      SHARED CNN-GRU ENCODER                          │
+│                                                                      │
+│   Conv1D (25 → 96 channels)                                          │
+│   BatchNorm + ReLU                                                   │
+│        │                                                             │
+│   Conv1D (96 → 96 channels)                                          │
+│   BatchNorm + ReLU                                                   │
+│        │                                                             │
+│   GRU  (96 → 192 hidden units)                                       │
+│        │                                                             │
+│   Latent Representation  Z  [Batch × 192]                            │
+└──────────────────────────────┬───────────────────────────────────────┘
 │
 ▼
-Noisy Top-K Gating
-(Sparse Top-K Softmax)
-/   |   |   
-E1  E2  E3  E4   ← Expert Heads (with Domain Embeddings)
-\   |   |   /
-Mixture Aggregation
+┌──────────────────────────────────────────────────────────────────────┐
+│                    NOISY TOP-K SPARSE GATING                         │
+│                                                                      │
+│   Gating Network  →  Adds tunable noise  →  Top-K Selection         │
+│                            │                                         │
+│                       Softmax Normalisation                          │
+│           ┌───────────┬────┴────┬───────────┐                        │
+│         g(E1)       g(E2)     g(E3)       g(E4)   ← Gate Weights    │
+└─────┬─────────────────────────────────────────────────────┬──────────┘
+│                                                     │
+│   Stability Constraint:  S(w) = λ Σ |w_k(x) - w_k(x')|       │
+│                                                                │
+▼                                                                │
+┌────────────────────────────────────────────────────────────────────┐
+│               EXPERT HEADS  (with Domain Embeddings)               │
+│                                                                    │
+│  Each expert Eᵢ receives:  hᵢ = [Z ; eᵢ]                          │
+│  where  eᵢ ∈ ℝᵈ  is a learnable domain embedding vector           │
+│                                                                    │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
+│  │ Expert 1 │  │ Expert 2 │  │ Expert 3 │  │ Expert 4 │           │
+│  │  FC Layer│  │  FC Layer│  │  FC Layer│  │  FC Layer│           │
+│  │  μ₁, σ₁²│  │  μ₂, σ₂²│  │  μ₃, σ₃²│  │  μ₄, σ₄²│           │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘           │
+│       └─────────────┴─────────────┴──────────────┘                 │
+│                              │                                      │
+│                     Mixture Aggregation                             │
+│              p(y|x) = Σ gᵢ(x) · pᵢ(y|x)                           │
+└──────────────────────────────┬─────────────────────────────────────┘
 │
-┌──────┴──────┐
-Predicted     Predicted
-Mean         Variance
+▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                         LOSS FUNCTIONS                               │
+│                                                                      │
+│  ① NLL Loss      : Lₙₗₗ = ½ log σ² + (y−μ)²/2σ²                    │
+│  ② Monotonicity  : Lₘₒₙₒ = (1/N) Σ max(0, yᵢ₊₁ − yᵢ)    ← PIR    │
+│  ③ Load Balance  : auxiliary loss for uniform expert utilisation    │
+│  ④ Diversity     : auxiliary loss to prevent expert collapse        │
+└──────────────────────────────┬───────────────────────────────────────┘
 │
-Uncertainty Estimate
-(Epistemic + Aleatoric)
-The **CNN-GRU hybrid** captures both local degradation signatures (via convolutions) and long-range health progression trends (via GRU). The **MoE routing** specializes different experts to different degradation regimes, with an interpretable gating mechanism that reveals a learned degradation curriculum.
-
----
-
+▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                      PROBABILISTIC OUTPUT                            │
+│                                                                      │
+│  Predicted Mean     μ_total                                          │
+│  Predicted Variance σ²_total = σ²_epistemic + σ²_aleatoric          │
+│  Expert Gate Weights  [g₁, g₂, g₃, g₄]  ← interpretability         │
+│  90% Prediction Interval  PI = μ ± z₀.₉₅ · σ_total                 │
+└──────────────────────────────────────────────────────────────────────┘
 ## 📊 Dataset: NASA C-MAPSS
 
 All experiments use the **Commercial Modular Aero-Propulsion System Simulation (C-MAPSS)** benchmark introduced by Saxena et al. (2008). It contains run-to-failure trajectories from turbofan engines with 21 sensor channels and 3 operational settings.
