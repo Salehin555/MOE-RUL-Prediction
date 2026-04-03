@@ -1,6 +1,6 @@
 # Sparsely-Gated Mixture of Experts with CNN-GRU Encoding for Interpretable Remaining Useful Life Prediction
 
-> **Md. Salehin Seyama, Limon Bin Hossain**  
+> **Md. Salehin Seyam, Limon Bin Hossain**  
 > Department of Industrial and Production Engineering, Bangladesh University of Engineering and Technology (BUET), Dhaka, Bangladesh  
 >
 > **Abdur Rahman**  
@@ -393,7 +393,7 @@ If you use this work, please cite:
 
 ## 📬 Contact
 
-**Md. Salehin Seyama**  
+**Md. Salehin Seyam**  
 Department of Industrial and Production Engineering  
 Bangladesh University of Engineering and Technology (BUET)  
 Dhaka-1000, Bangladesh
