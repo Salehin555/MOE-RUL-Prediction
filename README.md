@@ -308,32 +308,6 @@ A **2²** factorial design was used across all 13 training configurations to iso
 
 ---
 
-## 📁 Repository Structure
-
-```text
-├── data/
-│   └── CMAPSS/              # NASA C-MAPSS raw data (FD001–FD004)
-├── preprocessing/
-│   ├── feature_selection.py # Variance filtering, cumulative variance, CV ranking
-│   └── normalization.py     # Min-max normalisation and RUL capping
-├── models/
-│   ├── encoder.py           # CNN-GRU shared encoder
-│   ├── experts.py           # Expert heads with domain embeddings
-│   ├── gating.py            # Noisy top-K sparse gating
-│   └── moe.py               # Full MoE model
-├── training/
-│   ├── losses.py            # NLL, PIR monotonicity, and auxiliary losses
-│   └── train.py             # Training loop with MC Dropout
-├── evaluation/
-│   ├── metrics.py           # RMSE, MAE, NASA Score, PI coverage/width
-│   ├── transfer.py          # 13-configuration cross-domain protocol
-│   └── factorial.py         # 2² factorial design and OLS regression
-├── results/
-│   └── figures/             # Plots, tables, and ablation results
-└── README.md
-```
-
----
 
 ## 📦 Requirements
 
@@ -353,42 +327,6 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/MoE-RUL-CMAPSS.git
-cd MoE-RUL-CMAPSS
-
-# Prepare the dataset (place C-MAPSS files in data/CMAPSS/)
-python preprocessing/feature_selection.py --subset FD001
-
-# Train the full MoE model
-python training/train.py --subset FD002 --experts 4 --topk 2
-
-# Evaluate intra-domain and cross-domain performance
-python evaluation/transfer.py --protocol all_13
-
-# Run the ablation study
-python evaluation/metrics.py --ablation
-```
-
----
-
-## 📄 Citation
-
-If you use this work, please cite:
-
-```bibtex
-@article{seyama2025moe_rul,
-  title   = {Sparsely-Gated Mixture of Experts with CNN-GRU Encoding for Interpretable Remaining Useful Life Prediction},
-  author  = {Seyama, Md. Salehin and Hossain, Limon Bin and Rahman, Abdur},
-  journal = {[Journal Name]},
-  year    = {2025}
-}
-```
-
----
 
 ## 📬 Contact
 
